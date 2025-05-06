@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 #if (CSP_HAVE_LIBSIMPLYCAN)
     if (can_device)
     {
-        error = csp_can_simplycan_open_and_add_interface(can_device, CSP_IF_CAN_DEFAULT_NAME, can_bitrate, false, &default_iface);
+        error = csp_can_simplycan_open_and_add_interface(can_device, CSP_IF_CAN_DEFAULT_NAME, can_bitrate, true, &default_iface);
         if (error != CSP_ERR_NONE)
         {
             csp_log_error("failed to add CAN interface [%s], error: %d", can_device, error);
