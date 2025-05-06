@@ -4,6 +4,7 @@ build
 .waf*
 .waf3*
 waf-*/
+waf3*/
 *.o
 *.d
 *.pyc
