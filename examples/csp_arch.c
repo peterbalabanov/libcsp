@@ -41,6 +41,7 @@ CSP_DEFINE_TASK(thread_func) {
     csp_log_info("Thread started");
     thread_executed = true;
     csp_sleep_ms(10000); // safty - ensure process terminates
+    csp_log_info("thread after sleep");
     exit(1);
     return CSP_TASK_RETURN;
 }
@@ -154,6 +155,6 @@ int main(int argc, char * argv[]) {
     csp_assert(csp_bin_sem_wait(&s, 200) == CSP_SEMAPHORE_OK);
     csp_assert(csp_bin_sem_wait(&s, 200) == CSP_SEMAPHORE_ERROR);
     csp_assert(csp_bin_sem_remove(&s) == CSP_SEMAPHORE_OK);
-
+    csp_log_info("finished asserts");
     return 0;
 }
