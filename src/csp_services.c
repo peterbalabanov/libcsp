@@ -55,8 +55,10 @@ int csp_ping(uint8_t node, uint32_t timeout, unsigned int size, uint8_t conn_opt
 
 	/* Read incoming frame */
 	packet = csp_read(conn, timeout);
-	if (packet == NULL)
+	if (packet == NULL){
+		csp_log_info("packet NULL in ping");
 		goto out;
+	}
 
 	/* Ensure that the data was actually echoed */
 	for (i = 0; i < size; i++) {

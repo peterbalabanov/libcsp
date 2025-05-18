@@ -63,7 +63,7 @@ static void *simplycan_rx_thread(void *arg) {
     can_msg_t can_msg;
 
     while (1) {
-        usleep(20000); /* sleep to avoid busy loop */
+        usleep(1000000); /* sleep to avoid busy loop */
         /* Read CAN frame */
         memset(&can_msg, 0, sizeof(can_msg));
         int result = simply_receive(&can_msg);
@@ -113,6 +113,7 @@ static int csp_can_tx_frame(void *driver_data, uint32_t id, const uint8_t *data,
 
     if (!simply_send(&can_msg)) {
         csp_log_error("simplycan error in tx: %d", simply_get_last_error());
+        status();
         simplycan_free(ctx);
         return CSP_ERR_TX;
     }
@@ -123,7 +124,7 @@ static int csp_can_tx_frame(void *driver_data, uint32_t id, const uint8_t *data,
             simplycan_free(ctx);
             return CSP_ERR_TX;
         }
-        // status();
+        status();
         if (elapsed_ms >= 1000) {
             csp_log_warn("%s[%s]: write() failed", __FUNCTION__, ctx->name);
             return CSP_ERR_TX;
