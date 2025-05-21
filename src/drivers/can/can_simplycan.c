@@ -26,9 +26,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <errno.h>
 #include <csp/drivers/simply.h>
 #include <sys/time.h>
+#include <semaphore.h>
 
 #include <csp/csp.h>
 #include <csp/arch/csp_thread.h>
+
+sem_t sem;
 
 // CAN interface data, state, etc.
 typedef struct {
@@ -63,10 +66,14 @@ static void *simplycan_rx_thread(void *arg) {
     can_msg_t can_msg;
 
     while (1) {
-        usleep(1000000); /* sleep to avoid busy loop */
+        //csp_route_print_interfaces();
         /* Read CAN frame */
         memset(&can_msg, 0, sizeof(can_msg));
+
+        sem_wait(&sem);
         int result = simply_receive(&can_msg);
+        sem_post(&sem);
+
         if (result == -1) {
             csp_log_error("%s[%s]: read() failed, simplycan errorcode:%d", __FUNCTION__, ctx->name,
                           simply_get_last_error());
@@ -111,10 +118,12 @@ static int csp_can_tx_frame(void *driver_data, uint32_t id, const uint8_t *data,
     can_context_t *ctx = driver_data;
     can_sts_t canstatus = {.sts = 0, .tx_free = 0};
 
+    sem_wait(&sem);
     if (!simply_send(&can_msg)) {
         csp_log_error("simplycan error in tx: %d", simply_get_last_error());
         status();
         simplycan_free(ctx);
+        sem_post(&sem);
         return CSP_ERR_TX;
     }
 
@@ -122,16 +131,19 @@ static int csp_can_tx_frame(void *driver_data, uint32_t id, const uint8_t *data,
         if (!simply_can_status(&canstatus)) {
             csp_log_error("simplycan error in status petition: %d", simply_get_last_error());
             simplycan_free(ctx);
+            sem_post(&sem);
             return CSP_ERR_TX;
         }
         status();
         if (elapsed_ms >= 1000) {
             csp_log_warn("%s[%s]: write() failed", __FUNCTION__, ctx->name);
+            sem_post(&sem);
             return CSP_ERR_TX;
         }
         csp_sleep_ms(5);
         elapsed_ms += 5;
     }
+    sem_post(&sem);
 
     return CSP_ERR_NONE;
 }
@@ -141,6 +153,9 @@ int csp_can_simplycan_open_and_add_interface(const char *device, const char *ifn
     if (ifname == NULL) {
         ifname = CSP_IF_CAN_DEFAULT_NAME;
     }
+
+    /* Initialization of semaphore*/
+    sem_init(&sem,0,1);
 
     csp_log_info("INIT %s: device: [%s], bitrate: %d, promisc: %d", ifname, device, bitrate, promisc);
 
