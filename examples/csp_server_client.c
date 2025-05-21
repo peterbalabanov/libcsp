@@ -107,6 +107,7 @@ CSP_DEFINE_TASK(task_client) {
         time_t timestamp = time(NULL);
         int result = csp_ping(server_address, 1000, 1, CSP_O_CRC32);
         csp_log_info("[%s] Ping address: %u, result %d [mS]", asctime(gmtime(&timestamp)), server_address, result);
+        csp_route_print_interfaces();
 
         /* Send reboot request to server, the server has no actual implementation of csp_sys_reboot() and fails to
          * reboot */
@@ -323,7 +324,7 @@ int main(int argc, char *argv[]) {
     /* Start client thread */
     if ((server_address != 255) || /* server address specified, I must be client */
         (default_iface == NULL)) { /* no interfaces specified -> run server & client via loopback */
-        csp_thread_create(task_client, "CLIENT", 1000, NULL, 0, NULL);
+        csp_thread_create(task_client, "CLIENT", 1000, NULL, CSP_PRIO_CRITICAL, NULL);
     }
 
     /* Wait for execution to end (ctrl+c) */
