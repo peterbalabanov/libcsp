@@ -58,6 +58,7 @@ CSP_DEFINE_TASK(task_server) {
 
     /* Wait for connections and then process packets on the connection */
     while (1) {
+        csp_route_print_interfaces();
 
         /* Wait for a new connection, 10000 mS timeout */
         csp_conn_t *conn;
@@ -316,20 +317,21 @@ int main(int argc, char *argv[]) {
     csp_route_print_table();
 
     /* Start server thread */
-    if ((server_address == 255) || /* no server address specified, I must be server */
-        (default_iface == NULL)) { /* no interfaces specified -> run server & client via loopback */
-        csp_thread_create(task_server, "SERVER", 1000, NULL, 0, NULL);
-    }
+    //  if ((server_address == 255) || /* no server address specified, I must be server */
+    //    (default_iface == NULL)) { /* no interfaces specified -> run server & client via loopback */
+    csp_thread_create(task_server, "SERVER", 1000, NULL, 0, NULL);
+    //}
 
     /* Start client thread */
-    if ((server_address != 255) || /* server address specified, I must be client */
-        (default_iface == NULL)) { /* no interfaces specified -> run server & client via loopback */
-        csp_thread_create(task_client, "CLIENT", 1000, NULL, CSP_PRIO_CRITICAL, NULL);
-    }
+    // if ((server_address != 255) || /* server address specified, I must be client */
+    //     (default_iface == NULL)) { /* no interfaces specified -> run server & client via loopback */
+         csp_thread_create(task_client, "CLIENT", 1000, NULL, CSP_PRIO_CRITICAL, NULL);
+    // }
 
     /* Wait for execution to end (ctrl+c) */
     while (1) {
         csp_sleep_ms(3000);
+        csp_route_print_interfaces();
 
         if (test_mode) {
             /* Test mode is intended for checking that host & client can exchange packets over loopback */
