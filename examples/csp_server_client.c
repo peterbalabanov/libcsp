@@ -23,18 +23,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
-#include <time.h>
 
 #include <csp/csp.h>
 #include <csp/arch/csp_thread.h>
 #include <csp/drivers/usart.h>
 #include <csp/drivers/can_socketcan.h>
 #include <csp/drivers/can_simplycan.h>
-#include <csp/drivers/can_simplycan.h>
 #include <csp/interfaces/csp_if_zmqhub.h>
 
 /* Server port, the port the server listens on for incoming connections from the client. */
-#define MY_SERVER_PORT 10
 #define MY_SERVER_PORT 10
 
 /* Commandline options */
@@ -48,22 +45,14 @@ static unsigned int server_received = 0;
 CSP_DEFINE_TASK(task_server) {
 
     csp_log_info("Server task started");
-    csp_log_info("Server task started");
 
-    /* Create socket with no specific socket options, e.g. accepts CRC32, HMAC, XTEA, etc. if enabled during compilation
-     */
-    csp_socket_t *sock = csp_socket(CSP_SO_NONE);
     /* Create socket with no specific socket options, e.g. accepts CRC32, HMAC, XTEA, etc. if enabled during compilation
      */
     csp_socket_t *sock = csp_socket(CSP_SO_NONE);
 
     /* Bind socket to all ports, e.g. all incoming connections will be handled here */
     csp_bind(sock, CSP_ANY);
-    /* Bind socket to all ports, e.g. all incoming connections will be handled here */
-    csp_bind(sock, CSP_ANY);
 
-    /* Create a backlog of 10 connections, i.e. up to 10 new connections can be queued */
-    csp_listen(sock, 10);
     /* Create a backlog of 10 connections, i.e. up to 10 new connections can be queued */
     csp_listen(sock, 10);
 
@@ -77,26 +66,10 @@ CSP_DEFINE_TASK(task_server) {
             /* timeout */
             continue;
         }
-        /* Wait for a new connection, 10000 mS timeout */
-        csp_conn_t *conn;
-        if ((conn = csp_accept(sock, 10000)) == NULL) {
-            /* timeout */
-            continue;
-        }
 
         /* Read packets on connection, timout is 100 mS */
         csp_packet_t *packet;
-        while ((packet = csp_read(conn, 50)) != NULL) {
-            switch (csp_conn_dport(conn)) {
-            case MY_SERVER_PORT:
-                /* Process packet here */
-                csp_log_info("Packet received on MY_SERVER_PORT: %s", (char *)packet->data);
-                csp_buffer_free(packet);
-                ++server_received;
-                break;
-        /* Read packets on connection, timout is 100 mS */
-        csp_packet_t *packet;
-        while ((packet = csp_read(conn, 50)) != NULL) {
+        while ((packet = csp_read(conn, 0)) != NULL) {
             switch (csp_conn_dport(conn)) {
             case MY_SERVER_PORT:
                 /* Process packet here */
@@ -111,21 +84,11 @@ CSP_DEFINE_TASK(task_server) {
                 break;
             }
         }
-            default:
-                /* Call the default CSP service handler, handle pings, buffer use, etc. */
-                csp_service_handler(conn, packet);
-                break;
-            }
-        }
 
         /* Close current connection */
         csp_close(conn);
     }
-        /* Close current connection */
-        csp_close(conn);
-    }
 
-    return CSP_TASK_RETURN;
     return CSP_TASK_RETURN;
 }
 /* End of server task */
@@ -134,15 +97,11 @@ CSP_DEFINE_TASK(task_server) {
 CSP_DEFINE_TASK(task_client) {
 
     csp_log_info("Client task started");
-    csp_log_info("Client task started");
 
-    unsigned int count = 0;
     unsigned int count = 0;
 
     while (1) {
-    while (1) {
 
-        csp_sleep_ms(test_mode ? 200 : 1000);
         csp_sleep_ms(test_mode ? 200 : 1000);
 
         /* Send ping to server, timeout 1000 mS, ping size 100 bytes */
@@ -155,29 +114,9 @@ CSP_DEFINE_TASK(task_client) {
          * reboot */
         // csp_reboot(server_address);
         // csp_log_info("reboot system request sent to address: %u", server_address);
-        /* Send ping to server, timeout 1000 mS, ping size 100 bytes */
-        time_t timestamp = time(NULL);
-        int result = csp_ping(server_address, 1000, 1, CSP_O_CRC32);
-        csp_log_info("[%s] Ping address: %u, result %d [mS]", asctime(gmtime(&timestamp)), server_address, result);
-        csp_route_print_interfaces();
-
-        /* Send reboot request to server, the server has no actual implementation of csp_sys_reboot() and fails to
-         * reboot */
-        // csp_reboot(server_address);
-        // csp_log_info("reboot system request sent to address: %u", server_address);
 
         /* Send data packet (string) to server */
-        /* Send data packet (string) to server */
 
-        // /* 1. Connect to host on 'server_address', port MY_SERVER_PORT with regular UDP-like protocol and 1000 ms
-        //  * timeout */
-        // csp_conn_t *conn = csp_connect(CSP_PRIO_NORM, server_address, MY_SERVER_PORT, 1000, CSP_O_NONE);
-        // if (conn == NULL)
-        // {
-        //     /* Connect failed */
-        //     csp_log_error("Connection failed");
-        //     return CSP_TASK_RETURN;
-        // }
         // /* 1. Connect to host on 'server_address', port MY_SERVER_PORT with regular UDP-like protocol and 1000 ms
         //  * timeout */
         // csp_conn_t *conn = csp_connect(CSP_PRIO_NORM, server_address, MY_SERVER_PORT, 1000, CSP_O_NONE);
@@ -196,32 +135,13 @@ CSP_DEFINE_TASK(task_client) {
         //     csp_log_error("Failed to get CSP buffer");
         //     return CSP_TASK_RETURN;
         // }
-        // /* 2. Get packet buffer for message/data */
-        // csp_packet_t *packet = csp_buffer_get(100);
-        // if (packet == NULL)
-        // {
-        //     /* Could not get buffer element */
-        //     csp_log_error("Failed to get CSP buffer");
-        //     return CSP_TASK_RETURN;
-        // }
 
-        // /* 3. Copy data to packet */
-        // snprintf((char *)packet->data, csp_buffer_data_size(), "Hello World (%u)", ++count);
         // /* 3. Copy data to packet */
         // snprintf((char *)packet->data, csp_buffer_data_size(), "Hello World (%u)", ++count);
 
         // /* 4. Set packet length */
         // packet->length = (strlen((char *)packet->data) + 1); /* include the 0 termination */
-        // /* 4. Set packet length */
-        // packet->length = (strlen((char *)packet->data) + 1); /* include the 0 termination */
 
-        // /* 5. Send packet */
-        // if (!csp_send(conn, packet, 1000))
-        // {
-        //     /* Send failed */
-        //     csp_log_error("Send failed");
-        //     csp_buffer_free(packet);
-        // }
         // /* 5. Send packet */
         // if (!csp_send(conn, packet, 1000))
         // {
@@ -233,17 +153,12 @@ CSP_DEFINE_TASK(task_client) {
         // /* 6. Close connection */
         // csp_close(conn);
     }
-        // /* 6. Close connection */
-        // csp_close(conn);
-    }
 
-    return CSP_TASK_RETURN;
     return CSP_TASK_RETURN;
 }
 /* End of client task */
 
 /* main - initialization of CSP and start of server/client tasks */
-int main(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
 
     uint8_t address = 1;
@@ -254,22 +169,13 @@ int main(int argc, char *argv[]) {
 #if (CSP_HAVE_LIBSIMPLYCAN)
     const char *can_device = NULL;
     int can_bitrate = 0;
-    const char *can_device = NULL;
 #endif
-#if (CSP_HAVE_LIBSIMPLYCAN)
-    const char *can_device = NULL;
-    int can_bitrate = 0;
-#endif
-    const char *kiss_device = NULL;
     const char *kiss_device = NULL;
 #if (CSP_HAVE_LIBZMQ)
     const char *zmq_device = NULL;
-    const char *zmq_device = NULL;
 #endif
     const char *rtable = NULL;
-    const char *rtable = NULL;
     int opt;
-    while ((opt = getopt(argc, argv, "a:d:r:c:b:k:z:tR:h")) != -1) {
     while ((opt = getopt(argc, argv, "a:d:r:c:b:k:z:tR:h")) != -1) {
         switch (opt) {
         case 'a':
@@ -281,34 +187,11 @@ int main(int argc, char *argv[]) {
         case 'r':
             server_address = atoi(optarg);
             break;
-        case 'a':
-            address = atoi(optarg);
-            break;
-        case 'd':
-            debug_level = atoi(optarg);
-            break;
-        case 'r':
-            server_address = atoi(optarg);
-            break;
 #if (CSP_HAVE_LIBSOCKETCAN)
         case 'c':
             can_device = optarg;
             break;
-        case 'c':
-            can_device = optarg;
-            break;
 #endif
-#if (CSP_HAVE_LIBSIMPLYCAN)
-        case 'c':
-            can_device = optarg;
-            break;
-        case 'b':
-            can_bitrate = atoi(optarg);
-            break;
-#endif
-        case 'k':
-            kiss_device = optarg;
-            break;
 #if (CSP_HAVE_LIBSIMPLYCAN)
         case 'c':
             can_device = optarg;
@@ -324,29 +207,7 @@ int main(int argc, char *argv[]) {
         case 'z':
             zmq_device = optarg;
             break;
-        case 'z':
-            zmq_device = optarg;
-            break;
 #endif
-        case 't':
-            test_mode = true;
-            break;
-        case 'R':
-            rtable = optarg;
-            break;
-        default:
-            printf("Usage:\n"
-                   " -a <address>     local CSP address\n"
-                   " -d <debug-level> debug level, 0 - 6\n"
-                   " -r <address>     run client against server address\n"
-                   " -c <can-device>  add CAN device\n"
-                   " -b <bitrate>     CAN bitrate\n"
-                   " -k <kiss-device> add KISS device (serial)\n"
-                   " -z <zmq-device>  add ZMQ device, e.g. \"localhost\"\n"
-                   " -R <rtable>      set routing table\n"
-                   " -t               enable test mode\n");
-            exit(1);
-            break;
         case 't':
             test_mode = true;
             break;
@@ -391,15 +252,7 @@ int main(int argc, char *argv[]) {
 
     /* Add interface(s) */
     csp_iface_t *default_iface = NULL;
-    csp_iface_t *default_iface = NULL;
     if (kiss_device) {
-        csp_usart_conf_t conf = {.device = kiss_device,
-                                 .baudrate = 115200, /* supported on all platforms */
-                                 .databits = 8,
-                                 .stopbits = 1,
-                                 .paritysetting = 0,
-                                 .checkparity = 0};
-        error = csp_usart_open_and_add_kiss_interface(&conf, CSP_IF_KISS_DEFAULT_NAME, &default_iface);
         csp_usart_conf_t conf = {.device = kiss_device,
                                  .baudrate = 115200, /* supported on all platforms */
                                  .databits = 8,
@@ -415,16 +268,6 @@ int main(int argc, char *argv[]) {
 #if (CSP_HAVE_LIBSOCKETCAN)
     if (can_device) {
         error = csp_can_socketcan_open_and_add_interface(can_device, CSP_IF_CAN_DEFAULT_NAME, 0, false, &default_iface);
-        if (error != CSP_ERR_NONE) {
-            csp_log_error("failed to add CAN interface [%s], error: %d", can_device, error);
-            exit(1);
-        }
-    }
-#endif
-#if (CSP_HAVE_LIBSIMPLYCAN)
-    if (can_device) {
-        error = csp_can_simplycan_open_and_add_interface(can_device, CSP_IF_CAN_DEFAULT_NAME, can_bitrate, true,
-                                                         &default_iface);
         if (error != CSP_ERR_NONE) {
             csp_log_error("failed to add CAN interface [%s], error: %d", can_device, error);
             exit(1);
@@ -486,7 +329,6 @@ int main(int argc, char *argv[]) {
     // }
 
     /* Wait for execution to end (ctrl+c) */
-    while (1) {
     while (1) {
         csp_sleep_ms(3000);
         csp_route_print_interfaces();

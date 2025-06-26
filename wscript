@@ -32,7 +32,6 @@ valid_loglevel = ['error', 'warn', 'info', 'debug']
 def options(ctx):
     # Load compiler
     ctx.load('gcc')
-    ctx.load('gcc')
 
     ctx.add_option('--toolchain', default=None, help='Set toolchain prefix')
 
@@ -89,7 +88,6 @@ def configure(ctx):
         ctx.env.AR = ctx.options.toolchain + 'ar'
 
     ctx.load('gcc')
-    ctx.load('gcc')
 
     # Set git revision define
     git_rev = os.popen('git describe --long --always 2> /dev/null || echo unknown').read().strip()
@@ -105,7 +103,6 @@ def configure(ctx):
     # Setup CFLAGS
     if (len(ctx.stack_path) <= 1) and (len(ctx.env.CFLAGS) == 0):
         ctx.env.prepend_value('CFLAGS', ["-std=gnu99", "-g", "-Os", "-Wall", "-Wextra", "-Wshadow", "-Wcast-align",
-                                         "-Wwrite-strings", "-Wno-unused-parameter"])#, "-Werror"])
                                          "-Wwrite-strings", "-Wno-unused-parameter"])#, "-Werror"])
 
     # Setup default include path and any extra defined

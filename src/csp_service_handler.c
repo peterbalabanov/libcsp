@@ -217,113 +217,11 @@ void csp_service_handler(csp_conn_t * conn, csp_packet_t * packet) {
 
 	switch (csp_conn_dport(conn)) {
 
-	case CSP_CMP:
-		/* Pass to CMP handler */
-		if (csp_cmp_handler(conn, packet) != CSP_ERR_NONE) {
-			csp_buffer_free(packet);
-			return;
-		}
-		break;
-
 	case CSP_PING:
 		/* A ping means, just echo the packet, so no changes */
 		csp_log_info("SERVICE: Ping received");
+		printf("SERVICE: Ping received here\n");
 		break;
-
-	case CSP_PS: {
-		/* Sanity check on request */
-		if ((packet->length != 1) || (packet->data[0] != 0x55)) {
-			/* Sanity check failed */
-			csp_buffer_free(packet);
-			/* Clear the packet, it has been freed */
-			packet = NULL;
-			break;
-		}
-		/* Start by allocating just the right amount of memory */
-		int task_list_size = csp_sys_tasklist_size();
-		char * pslist = csp_malloc(task_list_size);
-		/* Check for malloc fail */
-		if (pslist == NULL) {
-			/* Send out the data */
-			strcpy((char *)packet->data, "Not enough memory");
-			packet->length = strlen((char *)packet->data);
-			/* Break and let the default handling send packet */
-			break;
-		}
-
-		/* Retrieve the tasklist */
-		csp_sys_tasklist(pslist);
-		int pslen = strnlen(pslist, task_list_size);
-
-		/* Split the potentially very long string into packets */
-		int i = 0;
-		while(i < pslen) {
-
-			/* Allocate packet buffer, if need be */
-			if (packet == NULL)
-				packet = csp_buffer_get(CSP_RPS_MTU);
-			if (packet == NULL)
-				break;
-
-			/* Calculate length, either full MTU or the remainder */
-			packet->length = (pslen - i > CSP_RPS_MTU) ? CSP_RPS_MTU : (pslen - i);
-
-			/* Send out the data */
-			memcpy(packet->data, &pslist[i], packet->length);
-			i += packet->length;
-			if (!csp_send(conn, packet, 0))
-				csp_buffer_free(packet);
-
-			/* Clear the packet reference when sent */
-			packet = NULL;
-
-		}
-		csp_free(pslist);
-		break;
-	}
-
-	case CSP_MEMFREE: {
-		uint32_t total = csp_sys_memfree();
-
-		total = csp_hton32(total);
-		memcpy(packet->data, &total, sizeof(total));
-		packet->length = sizeof(total);
-
-		break;
-	}
-
-	case CSP_REBOOT: {
-		uint32_t magic_word;
-		memcpy(&magic_word, packet->data, sizeof(magic_word));
-
-		magic_word = csp_ntoh32(magic_word);
-
-		/* If the magic word is valid, reboot */
-		if (magic_word == CSP_REBOOT_MAGIC) {
-			csp_sys_reboot();
-		} else if (magic_word == CSP_REBOOT_SHUTDOWN_MAGIC) {
-			csp_sys_shutdown();
-		}
-		
-		csp_buffer_free(packet);
-		return;
-	}
-
-	case CSP_BUF_FREE: {
-		uint32_t size = csp_buffer_remaining();
-		size = csp_hton32(size);
-		memcpy(packet->data, &size, sizeof(size));
-		packet->length = sizeof(size);
-		break;
-	}
-
-	case CSP_UPTIME: {
-		uint32_t time = csp_get_uptime_s();
-		time = csp_hton32(time);
-		memcpy(packet->data, &time, sizeof(time));
-		packet->length = sizeof(time);
-		break;
-	}
 
 	default:
 		csp_buffer_free(packet);
@@ -331,8 +229,10 @@ void csp_service_handler(csp_conn_t * conn, csp_packet_t * packet) {
 	}
 
 	if (packet != NULL) {
-		if (!csp_send(conn, packet, 0))
+		printf("Sending ping response packet Dest %d, Src %d, Dport %d, Sport %d\n", packet->id.dst, packet->id.src,packet->id.dport, packet->id.sport);
+		if (!csp_send(conn, packet, 0)){
+			printf("csp service handler send failed\n");
 			csp_buffer_free(packet);
+		}
 	}
-
 }
