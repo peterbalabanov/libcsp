@@ -20,6 +20,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import os
+from waflib import Errors
 
 APPNAME = 'libcsp'
 VERSION = '1.6'
@@ -58,6 +59,9 @@ def options(ctx):
     # Drivers and interfaces (requires external dependencies)
     gr.add_option('--enable-if-zmqhub', action='store_true', help='Enable ZMQ interface')
     gr.add_option('--enable-can-socketcan', action='store_true', help='Enable Linux socketcan driver')
+    gr.add_option('--enable-can-simplycan', action='store_true', help='Enable simplycan driver')
+    gr.add_option('--simplycandir', action='store', default=None,
+                  help='Specify simplycan 64 bit .dll library directory (required if using simplycan)')
     gr.add_option('--with-driver-usart', default=None, metavar='DRIVER',
                   help='Build USART driver. [windows, linux, None]')
 
@@ -138,6 +142,15 @@ def configure(ctx):
         ctx.env.append_unique('FILES_CSP', 'src/drivers/can/can_socketcan.c')
         ctx.check_cfg(package='libsocketcan', args='--cflags --libs', define_name='CSP_HAVE_LIBSOCKETCAN')
         ctx.env.append_unique('LIBS', ctx.env.LIB_LIBSOCKETCAN)
+
+    # Add simplycan
+    if ctx.options.enable_can_simplycan:
+        ctx.env.append_unique('FILES_CSP', 'src/drivers/can/can_simplycan.c')
+        ctx.define('CSP_HAVE_LIBSIMPLYCAN', 1)
+        if not ctx.options.simplycandir:
+            raise Errors.WafError("--simplycandir must be specified")
+        ctx.env.append_unique('LINKFLAGS', os.path.normpath(
+            ctx.options.simplycandir)+'\simplyCAN-64.dll')
 
     # Add USART driver
     if ctx.options.with_driver_usart:
